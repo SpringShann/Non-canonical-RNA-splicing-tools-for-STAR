@@ -83,12 +83,9 @@ def plot_box_logy(canon_len, noncan_len, out_prefix):
         for line in bp[k]:
             line.set_color("black")
             line.set_linewidth(1.2)
-    means = [np.mean(x) if len(x) else np.nan for x in data]
-    ax.scatter([1, 2], means, s=22, c="white", edgecolors="black", linewidths=0.8, zorder=3, label="Mean")
 
     ax.set_yscale("log")
     ax.set_ylabel("Intron length (bp, log10 scale)")
-    ax.legend(loc="upper right")
     plt.tight_layout()
     for ext in ("png", "pdf", "svg"):
         plt.savefig(f"{out_prefix}.{ext}", dpi=600, transparent=True)
