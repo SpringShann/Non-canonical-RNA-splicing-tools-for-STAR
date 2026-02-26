@@ -1,0 +1,262 @@
+STAR version=2.7.10b
+STAR compilation time,server,dir=2022-11-01T09:53:26-04:00 :/home/dobin/data/STAR/STARcode/STAR.master/source
+STAR git: On branch master ; commit c6f8efc2c7043ef83bf8b0d9bed36bbb6b9b1133 ; diff files: CHANGES.md 
+##### Command Line:
+STAR --runThreadN 24 --genomeDir /home/jackie/star-documents/index --readFilesIn /home/jackie/star-documents/input/SRR23308049_1.fastq /home/jackie/star-documents/input/SRR23308049_2.fastq --outFileNamePrefix /home/jackie/star-documents/output/SRR23308049_ --outSAMtype BAM SortedByCoordinate
+##### Initial USER parameters from Command Line:
+outFileNamePrefix                 /home/jackie/star-documents/output/SRR23308049_
+###### All USER parameters from Command Line:
+runThreadN                    24     ~RE-DEFINED
+genomeDir                     /home/jackie/star-documents/index     ~RE-DEFINED
+readFilesIn                   /home/jackie/star-documents/input/SRR23308049_1.fastq   /home/jackie/star-documents/input/SRR23308049_2.fastq        ~RE-DEFINED
+outFileNamePrefix             /home/jackie/star-documents/output/SRR23308049_     ~RE-DEFINED
+outSAMtype                    BAM   SortedByCoordinate        ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runThreadN                        24
+genomeDir                         /home/jackie/star-documents/index
+readFilesIn                       /home/jackie/star-documents/input/SRR23308049_1.fastq   /home/jackie/star-documents/input/SRR23308049_2.fastq   
+outFileNamePrefix                 /home/jackie/star-documents/output/SRR23308049_
+outSAMtype                        BAM   SortedByCoordinate   
+
+-------------------------------
+##### Final effective command line:
+STAR   --runThreadN 24   --genomeDir /home/jackie/star-documents/index   --readFilesIn /home/jackie/star-documents/input/SRR23308049_1.fastq   /home/jackie/star-documents/input/SRR23308049_2.fastq      --outFileNamePrefix /home/jackie/star-documents/output/SRR23308049_   --outSAMtype BAM   SortedByCoordinate   
+----------------------------------------
+
+Number of fastq files for each mate = 1
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+WARNING: --limitBAMsortRAM=0, will use genome size as RAM limit for BAM sorting
+Finished loading and checking parameters
+Reading genome generation parameters:
+### STAR   --runMode genomeGenerate      --runThreadN 24   --genomeDir /home/jackie/star-documents/index   --genomeFastaFiles /home/jackie/star-documents/genome/GCF_000001635.27_GRCm39_genomic.fna      --sjdbGTFfile /home/jackie/star-documents/genome/genomic.gtf   --sjdbOverhang 59
+### GstrandBit=32
+versionGenome                 2.7.4a     ~RE-DEFINED
+genomeType                    Full     ~RE-DEFINED
+genomeFastaFiles              /home/jackie/star-documents/genome/GCF_000001635.27_GRCm39_genomic.fna        ~RE-DEFINED
+genomeSAindexNbases           14     ~RE-DEFINED
+genomeChrBinNbits             18     ~RE-DEFINED
+genomeSAsparseD               1     ~RE-DEFINED
+genomeTransformType           None     ~RE-DEFINED
+genomeTransformVCF            -     ~RE-DEFINED
+sjdbOverhang                  59     ~RE-DEFINED
+sjdbFileChrStartEnd           -        ~RE-DEFINED
+sjdbGTFfile                   /home/jackie/star-documents/genome/genomic.gtf     ~RE-DEFINED
+sjdbGTFchrPrefix              -     ~RE-DEFINED
+sjdbGTFfeatureExon            exon     ~RE-DEFINED
+sjdbGTFtagExonParentTranscripttranscript_id     ~RE-DEFINED
+sjdbGTFtagExonParentGene      gene_id     ~RE-DEFINED
+sjdbInsertSave                Basic     ~RE-DEFINED
+genomeFileSizes               2773718383   22189915905        ~RE-DEFINED
+Genome version is compatible with current STAR
+Number of real (reference) chromosomes= 61
+1	NC_000067.7	195154279	0
+2	NT_166280.1	169725	195297280
+3	NT_166281.1	241735	195559424
+4	NT_166282.1	153618	195821568
+5	NT_162750.1	206961	196083712
+6	NW_023337852.1	8412	196345856
+7	NT_166338.1	40056	196608000
+8	NC_000068.8	181755017	196870144
+9	NC_000069.7	159745316	378798080
+10	NC_000070.7	156860686	538705920
+11	NT_187055.1	1976	695730176
+12	NC_000071.7	151758149	695992320
+13	NT_187056.1	199368	847773696
+14	NT_187057.1	205776	848035840
+15	NT_187058.1	184189	848297984
+16	NT_166438.1	195993	848560128
+17	NT_187059.1	953012	848822272
+18	NC_000072.7	149588044	849870848
+19	NC_000073.7	144995196	999555072
+20	NT_166307.1	175968	1144782848
+21	NC_000074.7	130127694	1145044992
+22	NC_000075.7	124359700	1275330560
+23	NC_000076.7	130530862	1399848960
+24	NC_000077.7	121973369	1530396672
+25	NC_000078.7	120092757	1652555776
+26	NC_000079.7	120883175	1772879872
+27	NC_000080.7	125139656	1893990400
+28	NC_000081.7	104073951	2019295232
+29	NC_000082.7	98008968	2123628544
+30	NC_000083.7	95294699	2221670400
+31	NC_000084.7	90720763	2317090816
+32	NC_000085.7	61420004	2408054784
+33	NC_000086.8	169476592	2469658624
+34	NT_165789.3	559103	2639265792
+35	NC_000087.8	91455967	2640052224
+36	NT_187060.1	182347	2731540480
+37	NT_187061.1	259875	2731802624
+38	NT_187062.1	155838	2732064768
+39	NT_187063.1	158099	2732326912
+40	NT_166451.1	42057	2732589056
+41	NT_166462.1	31602	2732851200
+42	NT_166465.1	25871	2733113344
+43	NT_166466.1	23158	2733375488
+44	NT_166467.1	38659	2733637632
+45	NT_166469.1	35240	2733899776
+46	NT_166474.1	24668	2734161920
+47	NT_166476.1	23629	2734424064
+48	NT_166478.1	24323	2734686208
+49	NT_166443.1	22974	2734948352
+50	NT_166444.1	31704	2735210496
+51	NT_166480.1	21240	2735472640
+52	NT_166456.1	28664	2735734784
+53	NT_166471.1	24685	2735996928
+54	NT_166473.1	28772	2736259072
+55	NT_166454.1	26764	2736521216
+56	NT_166463.1	72385	2736783360
+57	NT_166450.1	47073	2737045504
+58	NT_166452.1	20208	2737307648
+59	NT_187064.1	114452	2737569792
+60	NW_023337853.1	31129	2737831936
+61	NC_005089.1	16299	2738094080
+--sjdbOverhang = 59 taken from the generated genome
+Started loading the genome: Fri Jun 27 22:04:35 2025
+
+Genome: size given as a parameter = 2773718383
+SA: size given as a parameter = 22189915905
+SAindex: size given as a parameter = 1
+Read from SAindex: pGe.gSAindexNbases=14  nSAi=357913940
+nGenome=2773718383;  nSAbyte=22189915905
+GstrandBit=32   SA number of indices=5379373552
+Shared memory is not used for genomes. Allocated a private copy of the genome.
+Genome file size: 2773718383 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 2773718383 bytes
+SA file size: 22189915905 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 22189915905 bytes
+Loading SAindex ... done: 1565873619 bytes
+Finished loading the genome: Fri Jun 27 22:04:49 2025
+
+Processing splice junctions database sjdbN=297161,   pGe.sjdbOverhang=59 
+alignIntronMax=alignMatesGapMax=0, the max intron size will be approximately determined by (2^winBinNbits)*winAnchorDistNbins=589824
+Created thread # 1
+Created thread # 2
+Created thread # 3
+Created thread # 4
+Created thread # 5
+Created thread # 6
+Created thread # 7
+Created thread # 8
+Created thread # 9
+Created thread # 10
+Created thread # 11
+Created thread # 12
+Created thread # 13
+Created thread # 14
+Created thread # 15
+Created thread # 16
+Created thread # 17
+Created thread # 18
+Created thread # 19
+Created thread # 20
+Created thread # 21
+Created thread # 22
+Created thread # 23
+BAM sorting: 280115 mapped reads
+BAM sorting bins genomic start loci:
+1	0	60744659
+2	0	134275807
+3	0	182295158
+4	7	33036592
+5	7	106795427
+6	7	156855345
+7	8	36617104
+8	8	103540379
+9	9	43002763
+10	9	114822199
+11	9	136279790
+12	11	28557546
+13	11	108051592
+14	11	133504048
+15	17	28424818
+16	17	86502582
+17	18	4718513
+18	18	43326967
+19	18	102118042
+20	18	141211863
+21	20	71208692
+22	20	112439312
+23	21	32159863
+24	21	72529279
+25	21	110067787
+26	22	75607220
+27	22	119037455
+28	23	35766588
+29	23	69294678
+30	23	94896431
+31	23	109559844
+32	24	25047267
+33	24	100171873
+34	25	34311492
+35	25	81931379
+36	26	24188700
+37	26	76744923
+38	27	78913263
+39	27	98847882
+40	28	4826934
+41	28	72809762
+42	29	29185933
+43	29	46571086
+44	30	34870687
+45	30	82357720
+46	31	40585159
+47	32	72839007
+48	32	161561728
+Thread #22 end of input stream, nextChar=-1
+Completed: thread #22
+Completed: thread #6
+Completed: thread #2
+Completed: thread #0
+Completed: thread #11
+Completed: thread #9
+Completed: thread #16
+Completed: thread #20
+Completed: thread #15
+Completed: thread #18
+Completed: thread #4
+Completed: thread #1
+Joined thread # 1
+Joined thread # 2
+Completed: thread #12
+Completed: thread #14
+Completed: thread #17
+Completed: thread #13
+Completed: thread #7
+Completed: thread #10
+Completed: thread #3
+Joined thread # 3
+Joined thread # 4
+Completed: thread #8
+Completed: thread #23
+Completed: thread #19
+Completed: thread #21
+Completed: thread #5
+Joined thread # 5
+Joined thread # 6
+Joined thread # 7
+Joined thread # 8
+Joined thread # 9
+Joined thread # 10
+Joined thread # 11
+Joined thread # 12
+Joined thread # 13
+Joined thread # 14
+Joined thread # 15
+Joined thread # 16
+Joined thread # 17
+Joined thread # 18
+Joined thread # 19
+Joined thread # 20
+Joined thread # 21
+Joined thread # 22
+Joined thread # 23
+Jun 27 22:06:12 ..... finished mapping
+RAM after mapping:
+VmPeak:	31351080 kB; VmSize:	31114432 kB; VmHWM:	29805712 kB; VmRSS:	29805280 kB; 
+RAM after freeing genome index memory:
+VmPeak:	31351080 kB; VmSize:	 5206704 kB; VmHWM:	29805712 kB; VmRSS:	 3897676 kB; 
+Jun 27 22:06:13 ..... started sorting BAM
+Max memory needed for sorting = 375207963
+ALL DONE!
