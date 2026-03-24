@@ -23,7 +23,8 @@ noncanonical_output_path = "output/2-noncanonical-motifs.txt"
 noncanonical_scored_output_path = "output/2-noncanonical-scored.txt"
 u2_u12_like_output_path = "output/2-U2_U12_like.txt"
 non_u2_u12_output_path = "output/2-non-U2_U12_like.txt"
-stats_output_path = "output/2-pwm_stats.txt"
+not_classified_output_path = "output/2-not_classified.txt"
+stats_output_path = "output/2-classification-stats.txt"
 
 donor_pwm_output_path = "output/2-donor_pwm.tsv"
 acceptor_pwm_output_path = "output/2-acceptor_pwm.tsv"
@@ -53,6 +54,7 @@ random_seed = 42                  # reproducible scrambling
 
 BASES = ["A", "C", "G", "T"]
 BASE_TO_IDX = {b: i for i, b in enumerate(BASES)}
+CANONICAL_MOTIF = "GT/AG"
 
 random.seed(random_seed)
 np.random.seed(random_seed)
@@ -192,26 +194,38 @@ def resolve_strand(star_strand: int, gene_strand: str) -> Tuple[int, str]:
 
 
 # =========================================================
-# Original-format motif extraction
-# (kept compatible with the original script output)
+# Transcript-oriented motif extraction
 # =========================================================
 def extract_simple_motif(chrom: str, start: int, end: int, strand: int) -> str:
     """
-    Keep the original script logic for motif output:
+    Extract a 2-bp donor/acceptor motif in transcript 5'->3' orientation.
+
+    Positive strand:
       donor    = genome[start, start+1]
       acceptor = genome[end-1, end]
-      if strand == 2, reverse-complement each side
+
+    Negative strand:
+      donor is at the genomic right end
+      acceptor is at the genomic left end
+      both are reverse-complemented into transcript orientation
     """
     try:
-        donor = safe_get_seq(chrom, start, start + 1, expected_len=2)
-        acceptor = safe_get_seq(chrom, end - 1, end, expected_len=2)
+        if strand == 1:
+            donor = safe_get_seq(chrom, start, start + 1, expected_len=2)
+            acceptor = safe_get_seq(chrom, end - 1, end, expected_len=2)
+        elif strand == 2:
+            donor = safe_get_seq(chrom, end - 1, end, expected_len=2)
+            acceptor = safe_get_seq(chrom, start, start + 1, expected_len=2)
+            if donor is not None:
+                donor = rev_comp(donor)
+            if acceptor is not None:
+                acceptor = rev_comp(acceptor)
+        else:
+            donor = safe_get_seq(chrom, start, start + 1, expected_len=2)
+            acceptor = safe_get_seq(chrom, end - 1, end, expected_len=2)
 
         if donor is None or acceptor is None:
             return "NA/NA"
-
-        if strand == 2:
-            donor = rev_comp(donor)
-            acceptor = rev_comp(acceptor)
 
         return f"{donor}/{acceptor}"
     except Exception:
@@ -429,6 +443,25 @@ def to_original_format_df(records: List[Dict]) -> pd.DataFrame:
     return df
 
 
+def extract_scoring_windows(record: Dict) -> Tuple[Optional[str], Optional[str], str]:
+    """
+    Extract transcript-oriented donor/acceptor windows for PWM scoring.
+    """
+    if record["strand"] not in (1, 2):
+        return None, None, "SKIPPED_UNRESOLVED_STRAND"
+
+    donor_window = extract_donor_window(record["chr"], record["start"], record["end"], record["strand"])
+    acceptor_window = extract_acceptor_window(record["chr"], record["start"], record["end"], record["strand"])
+
+    if donor_window is None or acceptor_window is None:
+        return donor_window, acceptor_window, "SKIPPED_BAD_WINDOW"
+
+    if not re.fullmatch(r"[ACGT]+", donor_window) or not re.fullmatch(r"[ACGT]+", acceptor_window):
+        return donor_window, acceptor_window, "SKIPPED_NON_ACGT_WINDOW"
+
+    return donor_window, acceptor_window, "OK"
+
+
 # =========================================================
 # Main workflow
 # =========================================================
@@ -451,46 +484,40 @@ def main():
     # Build unified record list
     all_records = build_junction_records(gtf_df, sj_df)
 
-    # Split canonical / non-canonical
-    canonical_records = [r for r in all_records if r["motif_code"] != 0]
-    noncanonical_records = [r for r in all_records if r["motif_code"] == 0]
+    # Split canonical / non-canonical by final transcript-oriented motif
+    canonical_records = [r for r in all_records if r["motif"] == CANONICAL_MOTIF]
+    noncanonical_records = [r for r in all_records if r["motif"] != CANONICAL_MOTIF]
 
     # Step 1: output canonical list
     canonical_df = to_original_format_df(canonical_records)
     canonical_df.to_csv(canonical_output_path, sep="\t", index=False)
     print(f"[OK] Canonical junctions written: {canonical_output_path}")
 
-    # Step 3: output all non-canonical list
+    # Step 2: output all non-canonical junctions
     noncanonical_df = to_original_format_df(noncanonical_records)
     noncanonical_df.to_csv(noncanonical_output_path, sep="\t", index=False)
     print(f"[OK] Non-canonical junctions written: {noncanonical_output_path}")
 
-    # Step 2: build PWM training windows from canonical junctions
+    # Step 3: build PWM training windows from canonical GT/AG junctions
     canonical_training_records = []
     canonical_skipped_unresolved_strand = 0
     canonical_skipped_bad_window = 0
+    canonical_skipped_non_acgt = 0
 
     donor_train_seqs = []
     acceptor_train_seqs = []
 
     for r in canonical_records:
-        if r["strand"] not in (1, 2):
+        donor_window, acceptor_window, window_status = extract_scoring_windows(r)
+
+        if window_status == "SKIPPED_UNRESOLVED_STRAND":
             canonical_skipped_unresolved_strand += 1
             continue
-
-        donor_window = extract_donor_window(r["chr"], r["start"], r["end"], r["strand"])
-        acceptor_window = extract_acceptor_window(r["chr"], r["start"], r["end"], r["strand"])
-
-        if donor_window is None or acceptor_window is None:
+        if window_status == "SKIPPED_BAD_WINDOW":
             canonical_skipped_bad_window += 1
             continue
-
-        if not re.fullmatch(r"[ACGT]+", donor_window):
-            canonical_skipped_bad_window += 1
-            continue
-
-        if not re.fullmatch(r"[ACGT]+", acceptor_window):
-            canonical_skipped_bad_window += 1
+        if window_status == "SKIPPED_NON_ACGT_WINDOW":
+            canonical_skipped_non_acgt += 1
             continue
 
         donor_train_seqs.append(donor_window)
@@ -509,7 +536,7 @@ def main():
     print(f"[OK] Donor PWM written: {donor_pwm_output_path}")
     print(f"[OK] Acceptor PWM written: {acceptor_pwm_output_path}")
 
-    # Step 3 + 4: extract non-canonical windows and score them
+    # Step 4: extract all non-canonical windows and score them
     scored_noncanonical_rows = []
     scoring_skipped_unresolved_strand = 0
     scoring_skipped_bad_window = 0
@@ -526,39 +553,37 @@ def main():
         classification = None
         score_status = "NOT_SCORED"
 
-        if r["strand"] not in (1, 2):
+        donor_window, acceptor_window, window_status = extract_scoring_windows(r)
+
+        if window_status == "SKIPPED_UNRESOLVED_STRAND":
             scoring_skipped_unresolved_strand += 1
             score_status = "SKIPPED_UNRESOLVED_STRAND"
+        elif window_status == "SKIPPED_BAD_WINDOW":
+            scoring_skipped_bad_window += 1
+            score_status = "SKIPPED_BAD_WINDOW"
+        elif window_status == "SKIPPED_NON_ACGT_WINDOW":
+            scoring_skipped_non_acgt += 1
+            score_status = "SKIPPED_NON_ACGT_WINDOW"
         else:
-            donor_window = extract_donor_window(r["chr"], r["start"], r["end"], r["strand"])
-            acceptor_window = extract_acceptor_window(r["chr"], r["start"], r["end"], r["strand"])
+            donor_score = score_seq(donor_window, donor_pwm)
+            acceptor_score = score_seq(acceptor_window, acceptor_pwm)
 
-            if donor_window is None or acceptor_window is None:
-                scoring_skipped_bad_window += 1
-                score_status = "SKIPPED_BAD_WINDOW"
-            elif not re.fullmatch(r"[ACGT]+", donor_window) or not re.fullmatch(r"[ACGT]+", acceptor_window):
+            if donor_score is None or acceptor_score is None:
                 scoring_skipped_non_acgt += 1
                 score_status = "SKIPPED_NON_ACGT_WINDOW"
             else:
-                donor_score = score_seq(donor_window, donor_pwm)
-                acceptor_score = score_seq(acceptor_window, acceptor_pwm)
+                total_score = donor_score + acceptor_score
+                score_status = "SCORED"
 
-                if donor_score is None or acceptor_score is None:
-                    scoring_skipped_non_acgt += 1
-                    score_status = "SKIPPED_NON_ACGT_WINDOW"
-                else:
-                    total_score = donor_score + acceptor_score
-                    score_status = "SCORED"
+                # Step 5: scrambled control for thresholding
+                donor_scrambled = shuffle_seq(donor_window)
+                acceptor_scrambled = shuffle_seq(acceptor_window)
 
-                    # Step 5: scrambled control for thresholding
-                    donor_scrambled = shuffle_seq(donor_window)
-                    acceptor_scrambled = shuffle_seq(acceptor_window)
+                donor_scrambled_score = score_seq(donor_scrambled, donor_pwm)
+                acceptor_scrambled_score = score_seq(acceptor_scrambled, acceptor_pwm)
 
-                    donor_scrambled_score = score_seq(donor_scrambled, donor_pwm)
-                    acceptor_scrambled_score = score_seq(acceptor_scrambled, acceptor_pwm)
-
-                    if donor_scrambled_score is not None and acceptor_scrambled_score is not None:
-                        scrambled_scores.append(donor_scrambled_score + acceptor_scrambled_score)
+                if donor_scrambled_score is not None and acceptor_scrambled_score is not None:
+                    scrambled_scores.append(donor_scrambled_score + acceptor_scrambled_score)
 
         scored_noncanonical_rows.append({
             "chr": r["chr"],
@@ -588,6 +613,7 @@ def main():
     # Step 6: classify scored non-canonical junctions
     u2_like_records = []
     non_u2_like_records = []
+    not_classified_records = []
 
     for row in scored_noncanonical_rows:
         if row["score_status"] == "SCORED" and row["total_score"] is not None:
@@ -621,6 +647,18 @@ def main():
                 })
         else:
             row["classification"] = "NOT_CLASSIFIED"
+            not_classified_records.append({
+                "chr": row["chr"],
+                "start": row["start"],
+                "end": row["end"],
+                "strand": row["strand"],
+                "strand_source": row["strand_source"],
+                "motif": row["motif"],
+                "intron_length": row["intron_length"],
+                "gene_id": row["gene_id"],
+                "unique_reads": row["unique_reads"],
+                "multi_reads": row["multi_reads"],
+            })
 
     # Write scored non-canonical master table
     scored_df = pd.DataFrame(scored_noncanonical_rows)
@@ -632,12 +670,15 @@ def main():
     # Write classified files in the same format as step 1
     u2_df = to_original_format_df(u2_like_records)
     non_u2_df = to_original_format_df(non_u2_like_records)
+    not_classified_df = to_original_format_df(not_classified_records)
 
     u2_df.to_csv(u2_u12_like_output_path, sep="\t", index=False)
     non_u2_df.to_csv(non_u2_u12_output_path, sep="\t", index=False)
+    not_classified_df.to_csv(not_classified_output_path, sep="\t", index=False)
 
     print(f"[OK] U2/U12-like junctions written: {u2_u12_like_output_path}")
     print(f"[OK] non-U2/U12-like junctions written: {non_u2_u12_output_path}")
+    print(f"[OK] Not-classified junctions written: {not_classified_output_path}")
 
     # Stats file
     with open(stats_output_path, "w") as f:
@@ -661,10 +702,16 @@ def main():
         f.write(f"canonical_total\t{len(canonical_records)}\n")
         f.write(f"noncanonical_total\t{len(noncanonical_records)}\n\n")
 
+        f.write("== Motif grouping ==\n")
+        f.write(f"canonical_definition\tmotif == {CANONICAL_MOTIF}\n")
+        f.write(f"noncanonical_definition\tmotif != {CANONICAL_MOTIF}\n")
+        f.write("grouping_basis\tfinal transcript-oriented motif\n\n")
+
         f.write("== Canonical PWM training ==\n")
         f.write(f"canonical_used_for_pwm\t{len(canonical_training_records)}\n")
         f.write(f"canonical_skipped_unresolved_strand\t{canonical_skipped_unresolved_strand}\n")
         f.write(f"canonical_skipped_bad_window\t{canonical_skipped_bad_window}\n")
+        f.write(f"canonical_skipped_non_acgt_window\t{canonical_skipped_non_acgt}\n")
         f.write(f"donor_training_window_length\t{len(donor_train_seqs[0]) if donor_train_seqs else 0}\n")
         f.write(f"acceptor_training_window_length\t{len(acceptor_train_seqs[0]) if acceptor_train_seqs else 0}\n\n")
 
@@ -682,7 +729,7 @@ def main():
         f.write("== Final classification ==\n")
         f.write(f"U2_U12_like\t{len(u2_like_records)}\n")
         f.write(f"non_U2_U12_like\t{len(non_u2_like_records)}\n")
-        f.write(f"not_classified\t{sum(1 for x in scored_noncanonical_rows if x['classification'] == 'NOT_CLASSIFIED')}\n")
+        f.write(f"not_classified\t{len(not_classified_records)}\n")
 
     print(f"[OK] Stats written: {stats_output_path}")
     print("[DONE] Workflow completed.")
