@@ -9,12 +9,15 @@ python 5-count-splice-sites.py \
     output/2-canonical-motifs.txt \
     output/2-U2_U12_like.txt \
     output/2-non-U2_U12_like.txt \
-    output/5-splice-site-summary.txt
+    output/0323-5-splice-site-summary.txt
 """
 
 def reverse_motif_if_needed(motif, strand):
     """
-    Standardize motif orientation based on strand.
+    Return motif as-is.
+
+    The upstream mapper now writes motifs in transcript-oriented
+    donor/acceptor order for both strands, so no downstream swap is needed.
 
     Parameters
     ----------
@@ -28,7 +31,7 @@ def reverse_motif_if_needed(motif, strand):
     Returns
     -------
     str
-        Standardized motif in forward donor/acceptor order, like 'GT/AG'
+        Transcript-oriented donor/acceptor motif, like 'GT/AG'
     """
     if pd.isna(motif):
         return None
@@ -49,8 +52,8 @@ def reverse_motif_if_needed(motif, strand):
     except Exception:
         return f"{donor}/{acceptor}"
 
-    if strand == 2:
-        donor, acceptor = acceptor, donor
+    #if strand == 2:
+     #   donor, acceptor = acceptor, donor
 
     return f"{donor}/{acceptor}"
 
@@ -96,8 +99,8 @@ def main():
     parser = argparse.ArgumentParser(
         description=(
             "Count splice-site motif combinations from canonical, U2/U12-like, "
-            "and non-U2/U12-like motif tables, correcting strand=2 by reversing "
-            "donor/acceptor order."
+            "and non-U2/U12-like motif tables using transcript-oriented motif "
+            "labels written by the mapper."
         )
     )
     parser.add_argument("canonical_file", help="Path to 2-canonical-motifs.txt")
